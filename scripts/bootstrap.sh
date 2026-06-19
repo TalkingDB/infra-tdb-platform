@@ -19,6 +19,7 @@
 #   TDB_AUTO_DEVPOD=Y|N           # whether to launch DevPod at the end
 #   TDB_INFRA_REPO=<git url>      # alternate infra repo source (e.g. a fork)
 #   TDB_USE_INFISICAL=Y|N         # skip the "use Infisical?" prompt
+#   TDB_INFISICAL_PROJECT_ID=<id> # skip the project ID prompt (Project Settings → Project ID)
 #   TDB_LLM_PROVIDER=openai|groq|ollama
 #   TDB_LLM_API_KEY=<key>
 #   TDB_LLM_BASE_URL=<url>        # required for ollama, optional override for others
@@ -106,7 +107,6 @@ write_env() {
 write_secret() {
   local key="$1" value="$2"
   if [[ "$SECRET_BACKEND" == "infisical" ]]; then
-    infisical secrets set LLM_PROVIDER=openai
     infisical secrets set "${key}=${value}" >/dev/null 2>&1 \
       && echo "  ✓ ${key} → Infisical" \
       || echo "  ✖ Failed to write ${key} to Infisical" >&2
@@ -171,7 +171,43 @@ infisical_setup() {
     return 0
   fi
 
-  echo "  ▶ Linking this workspace to an Infisical project..." >&2
+  # Ask for the project ID directly rather than relying on infisical init's
+  # interactive picker (every user/org has their own project — there's no
+  # single shared ID we can default to). Find this in the Infisical
+  # dashboard under Project Settings → Project ID.
+  local project_id env_name
+  if [[ -n "${TDB_INFISICAL_PROJECT_ID:-}" ]]; then
+    project_id="$TDB_INFISICAL_PROJECT_ID"
+  else
+    ask_input "  Infisical project ID (leave blank to pick interactively)" ""
+    project_id="$REPLY"
+  fi
+
+  if [[ -n "$project_id" ]]; then
+    ask_input "  Infisical environment" "dev"
+    env_name="$REPLY"
+
+    # .infisical.json is just {"workspaceId": ..., "defaultEnvironment": ...} —
+    # exactly what `infisical init` would write, so we can create it directly
+    # and skip the interactive org/project picker entirely.
+    cat > "$infra_dir/.infisical.json" <<JSON
+{
+  "workspaceId": "${project_id}",
+  "defaultEnvironment": "${env_name}"
+}
+JSON
+
+    # Validate the ID actually works before trusting this backend
+    if ! (cd "$infra_dir" && infisical secrets >/dev/null 2>&1); then
+      echo "  ⚠ Could not access project '$project_id' — check the ID and your access — falling back to .env" >&2
+      rm -f "$infra_dir/.infisical.json"
+      return 1
+    fi
+    echo "  ✓ Linked to Infisical project $project_id ($env_name)" >&2
+    return 0
+  fi
+
+  echo "  ▶ No project ID given — launching interactive picker..." >&2
   (cd "$infra_dir" && infisical init <"$TTY")
   if [[ ! -f "$infra_dir/.infisical.json" ]]; then
     echo "  ⚠ Infisical project link failed — falling back to .env" >&2
