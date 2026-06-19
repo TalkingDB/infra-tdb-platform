@@ -39,6 +39,10 @@
   },
 
   "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=${localEnv:HOME}/.infisical,target=/root/.infisical,type=bind,consistency=cached"
+  ],
 
   "postCreateCommand": "bash -c 'sed -i \"s/\\r$//\" infra-tdb-platform/.devcontainer/post-create.sh; bash infra-tdb-platform/.devcontainer/post-create.sh'"
 }
