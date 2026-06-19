@@ -107,6 +107,7 @@ write_env() {
 write_secret() {
   local key="$1" value="$2"
   if [[ "$SECRET_BACKEND" == "infisical" ]]; then
+    infisical secrets set LLM_PROVIDER=openai
     infisical secrets set "${key}=${value}" >/dev/null 2>&1 \
       && echo "  ✓ ${key} → Infisical" \
       || echo "  ✖ Failed to write ${key} to Infisical" >&2
