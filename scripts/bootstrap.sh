@@ -7,19 +7,24 @@
 #   1. Asks (once, upfront) where to create the TalkingDB folder
 #      and whether to launch DevPod when cloning finishes.
 #   2. Clones infra-tdb-platform + every active sibling in local/repo.yaml.
-#   3. Asks which LLM provider to use (OpenAI / Groq / Ollama) and writes
-#      credentials to infra-tdb-platform/.env (never committed).
+#   3. Asks which LLM provider to use (OpenAI / Groq / Ollama), then stores
+#      credentials in Infisical if available (installing the CLI and walking
+#      through login + project init if needed), falling back to a local
+#      infra-tdb-platform/.env file (never committed) if Infisical isn't
+#      usable for this user.
 #   4. Optionally launches `devpod up . --ide vscode`.
 #
 # Non-interactive overrides (skip prompts):
 #   TDB_ROOT=/some/path           # workspace location
 #   TDB_AUTO_DEVPOD=Y|N           # whether to launch DevPod at the end
 #   TDB_INFRA_REPO=<git url>      # alternate infra repo source (e.g. a fork)
+#   TDB_USE_INFISICAL=Y|N         # skip the "use Infisical?" prompt
 #   TDB_LLM_PROVIDER=openai|groq|ollama
 #   TDB_LLM_API_KEY=<key>
 #   TDB_LLM_BASE_URL=<url>        # required for ollama, optional override for others
 #
-# Idempotent: re-running skips repos that already exist and updates .env in place.
+# Idempotent: re-running skips repos that already exist, updates secrets
+# in place (Infisical or .env), and skips `infisical init` if already linked.
 
 set -euo pipefail
 
@@ -94,6 +99,81 @@ write_env() {
   fi
 }
 
+# ── Unified secret writer ─────────────────────────────────────────────────────
+# Dispatches to Infisical or .env depending on which backend is active.
+# SECRET_BACKEND is set in Phase 4 to either "infisical" or "env".
+
+write_secret() {
+  local key="$1" value="$2"
+  if [[ "$SECRET_BACKEND" == "infisical" ]]; then
+    infisical secrets set "${key}=${value}" >/dev/null 2>&1 \
+      && echo "  ✓ ${key} → Infisical" \
+      || echo "  ✖ Failed to write ${key} to Infisical" >&2
+  else
+    write_env "$key" "$value"
+  fi
+}
+
+# ── Infisical helpers ─────────────────────────────────────────────────────────
+
+infisical_install() {
+  echo "  ▶ Installing Infisical CLI..." >&2
+  if command -v brew >/dev/null 2>&1; then
+    brew install infisical/get-cli/infisical >/dev/null 2>&1
+  elif command -v apt-get >/dev/null 2>&1; then
+    curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' 2>/dev/null | sudo -E bash >/dev/null 2>&1 \
+      && sudo apt-get update -y >/dev/null 2>&1 \
+      && sudo apt-get install -y infisical >/dev/null 2>&1
+  elif command -v npm >/dev/null 2>&1; then
+    npm install -g @infisical/cli >/dev/null 2>&1
+  fi
+  command -v infisical >/dev/null 2>&1
+}
+
+infisical_setup() {
+  # Returns 0 (success, ready to use) or 1 (unavailable, caller should fall back).
+  local infra_dir="$1"
+
+  if [[ -z "$TTY" ]]; then
+    echo "  ⚠ No terminal attached — skipping Infisical (non-interactive)" >&2
+    return 1
+  fi
+
+  if ! command -v infisical >/dev/null 2>&1; then
+    if ! infisical_install; then
+      echo "  ⚠ Could not install Infisical CLI — falling back to .env" >&2
+      return 1
+    fi
+    echo "  ✓ Infisical CLI installed" >&2
+  fi
+
+  # Already logged in?
+  if ! infisical user whoami >/dev/null 2>&1; then
+    echo "  ▶ Logging in to Infisical (opens your browser)..." >&2
+    if ! infisical login; then
+      echo "  ⚠ Infisical login failed or was cancelled — falling back to .env" >&2
+      return 1
+    fi
+  else
+    echo "  ✓ Already logged in to Infisical" >&2
+  fi
+
+  # Already linked to a project in this repo?
+  if [[ -f "$infra_dir/.infisical.json" ]]; then
+    echo "  ✓ Already linked to an Infisical project" >&2
+    return 0
+  fi
+
+  echo "  ▶ Linking this workspace to an Infisical project..." >&2
+  (cd "$infra_dir" && infisical init)
+  if [[ ! -f "$infra_dir/.infisical.json" ]]; then
+    echo "  ⚠ Infisical project link failed — falling back to .env" >&2
+    return 1
+  fi
+
+  return 0
+}
+
 # ── Phase 1: workspace path ───────────────────────────────────────────────────
 
 if [[ -n "${TDB_ROOT:-}" ]]; then
@@ -118,7 +198,7 @@ fi
 # ── Phase 3: clone repos ──────────────────────────────────────────────────────
 
 mkdir -p "$ROOT"
-ROOT="$(cd "$ROOT" && pwd)"   # resolve to absolute so relative inputs work
+ROOT="$(cd "$ROOT" && pwd)"
 echo "▶ Workspace root: $ROOT"
 cd "$ROOT"
 
@@ -152,20 +232,41 @@ done < <(
 echo
 echo "✔ All repositories ready under: $ROOT"
 
-# ── Phase 4: LLM provider setup ───────────────────────────────────────────────
+# ── Phase 4: secret backend + LLM provider setup ──────────────────────────────
 
 ENV_FILE="$ROOT/$INFRA_NAME/.env"
 
-# Initialise .env if it doesn't exist, then lock permissions immediately
-if [[ ! -f "$ENV_FILE" ]]; then
-  touch "$ENV_FILE"
-fi
-chmod 600 "$ENV_FILE"
+echo
+echo "── Secrets setup ────────────────────────────────────────────"
 
-# Ensure .env is gitignored inside infra-tdb-platform
-GITIGNORE="$ROOT/$INFRA_NAME/.gitignore"
-if ! grep -qxF '.env' "$GITIGNORE" 2>/dev/null; then
-  echo '.env' >> "$GITIGNORE"
+SECRET_BACKEND="env"
+
+if [[ -n "${TDB_USE_INFISICAL:-}" ]]; then
+  case "$TDB_USE_INFISICAL" in [Yy]*|1) WANT_INFISICAL=1 ;; *) WANT_INFISICAL=0 ;; esac
+else
+  ask_yn "  Use Infisical for secrets?" "Y"
+  WANT_INFISICAL="$REPLY"
+fi
+
+if [[ "$WANT_INFISICAL" -eq 1 ]]; then
+  if infisical_setup "$ROOT/$INFRA_NAME"; then
+    SECRET_BACKEND="infisical"
+  fi
+fi
+
+if [[ "$SECRET_BACKEND" == "env" ]]; then
+  # Initialise .env if it doesn't exist, then lock permissions immediately
+  [[ -f "$ENV_FILE" ]] || touch "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
+
+  # Ensure .env is gitignored inside infra-tdb-platform
+  GITIGNORE="$ROOT/$INFRA_NAME/.gitignore"
+  if ! grep -qxF '.env' "$GITIGNORE" 2>/dev/null; then
+    echo '.env' >> "$GITIGNORE"
+  fi
+  echo "  ℹ Using local .env at $ENV_FILE" >&2
+else
+  echo "  ℹ Using Infisical for secret storage" >&2
 fi
 
 echo
@@ -201,7 +302,7 @@ else
   esac
 
   # API key (silent input — never echoed)
-  ask_secret "  ${PROVIDER} API key (Won't be visible in console, paste and press enter)"
+  ask_secret "  ${PROVIDER} API key"
   LLM_API_KEY="$REPLY"
 
   if [[ -z "$LLM_API_KEY" ]]; then
@@ -223,26 +324,33 @@ else
   fi
 fi
 
-# Write to .env — provider-specific key names so services can reference them directly,
+# Write secrets — provider-specific key names so services can reference them directly,
 # plus a unified LLM_PROVIDER flag so your app knows which one is active.
-write_env "LLM_PROVIDER" "$PROVIDER"
+# Dispatches to Infisical or .env automatically based on SECRET_BACKEND.
+write_secret "LLM_PROVIDER" "$PROVIDER"
 
 case "$PROVIDER" in
   openai)
-    [[ -n "$LLM_API_KEY"   ]] && write_env "OPENAI_API_KEY"  "$LLM_API_KEY"
-    [[ -n "$LLM_BASE_URL"  ]] && write_env "OPENAI_BASE_URL" "$LLM_BASE_URL"
+    [[ -n "$LLM_API_KEY"   ]] && write_secret "OPENAI_API_KEY"  "$LLM_API_KEY"
+    [[ -n "$LLM_BASE_URL"  ]] && write_secret "OPENAI_BASE_URL" "$LLM_BASE_URL"
     ;;
   groq)
-    [[ -n "$LLM_API_KEY"   ]] && write_env "GROQ_API_KEY"    "$LLM_API_KEY"
-    [[ -n "$LLM_BASE_URL"  ]] && write_env "GROQ_BASE_URL"   "$LLM_BASE_URL"
+    [[ -n "$LLM_API_KEY"   ]] && write_secret "GROQ_API_KEY"    "$LLM_API_KEY"
+    [[ -n "$LLM_BASE_URL"  ]] && write_secret "GROQ_BASE_URL"   "$LLM_BASE_URL"
     ;;
   ollama)
-    [[ -n "$LLM_API_KEY"   ]] && write_env "OLLAMA_API_KEY"  "$LLM_API_KEY"
-    [[ -n "$LLM_BASE_URL"  ]] && write_env "OLLAMA_BASE_URL" "$LLM_BASE_URL"
+    [[ -n "$LLM_API_KEY"   ]] && write_secret "OLLAMA_API_KEY"  "$LLM_API_KEY"
+    [[ -n "$LLM_BASE_URL"  ]] && write_secret "OLLAMA_BASE_URL" "$LLM_BASE_URL"
     ;;
 esac
 
-echo "  ✔ Secrets written to $ENV_FILE (mode 600)"
+echo
+if [[ "$SECRET_BACKEND" == "infisical" ]]; then
+  echo "  ✔ Secrets stored in Infisical"
+  echo "  ℹ Run services with: infisical run -- <your command>"
+else
+  echo "  ✔ Secrets written to $ENV_FILE (mode 600)"
+fi
 echo
 
 # ── Phase 5: launch DevPod ────────────────────────────────────────────────────
