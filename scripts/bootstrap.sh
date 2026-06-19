@@ -103,14 +103,19 @@ write_env() {
 # ── Unified secret writer ─────────────────────────────────────────────────────
 # Dispatches to Infisical or .env depending on which backend is active.
 # SECRET_BACKEND is set in Phase 4 to either "infisical" or "env".
+# INFISICAL_DIR is set in Phase 4 — the infisical CLI only finds .infisical.json
+# (and therefore the linked project) when run from that directory.
 
 write_secret() {
   local key="$1" value="$2"
   if [[ "$SECRET_BACKEND" == "infisical" ]]; then
-    infisical secrets set LLM_PROVIDER=openai
-    infisical secrets set "${key}=${value}" >/dev/null 2>&1 \
-      && echo "  ✓ ${key} → Infisical" \
-      || echo "  ✖ Failed to write ${key} to Infisical" >&2
+    local out
+    if out=$(cd "$INFISICAL_DIR" && infisical secrets set "${key}=${value}" --silent 2>&1); then
+      echo "  ✓ ${key} → Infisical"
+    else
+      echo "  ✖ Failed to write ${key} to Infisical:" >&2
+      echo "$out" | sed 's/^/      /' >&2
+    fi
   else
     write_env "$key" "$value"
   fi
@@ -295,6 +300,7 @@ fi
 if [[ "$WANT_INFISICAL" -eq 1 ]]; then
   if infisical_setup "$ROOT/$INFRA_NAME"; then
     SECRET_BACKEND="infisical"
+    INFISICAL_DIR="$ROOT/$INFRA_NAME"
   fi
 fi
 
