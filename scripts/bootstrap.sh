@@ -201,7 +201,7 @@ else
   esac
 
   # API key (silent input — never echoed)
-  ask_secret "  ${PROVIDER} API key"
+  ask_secret "  ${PROVIDER} API key (Won't be visible in console, paste and press enter)"
   LLM_API_KEY="$REPLY"
 
   if [[ -z "$LLM_API_KEY" ]]; then
