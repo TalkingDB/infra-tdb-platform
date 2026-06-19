@@ -150,7 +150,13 @@ infisical_setup() {
   # Already logged in?
   if ! infisical user whoami >/dev/null 2>&1; then
     echo "  ▶ Logging in to Infisical (opens your browser)..." >&2
-    if ! infisical login; then
+    # IMPORTANT: when this script is run via `curl ... | bash`, stdin is the
+    # curl pipe, not the keyboard. `infisical login`'s interactive prompts
+    # inherit that exhausted pipe and immediately hit EOF, which surfaces as
+    # "error: ^D / Unable to parse domain url". Redirecting its stdin to
+    # /dev/tty explicitly (same trick our own ask_* helpers use) fixes this
+    # on every platform, not just Windows.
+    if [[ -z "$TTY" ]] || ! infisical login <"$TTY"; then
       echo "  ⚠ Infisical login failed or was cancelled — falling back to .env" >&2
       return 1
     fi
@@ -165,7 +171,7 @@ infisical_setup() {
   fi
 
   echo "  ▶ Linking this workspace to an Infisical project..." >&2
-  (cd "$infra_dir" && infisical init)
+  (cd "$infra_dir" && infisical init <"$TTY")
   if [[ ! -f "$infra_dir/.infisical.json" ]]; then
     echo "  ⚠ Infisical project link failed — falling back to .env" >&2
     return 1
