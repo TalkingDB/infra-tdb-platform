@@ -3,4 +3,5 @@ repos:
   - https://github.com/TalkingDB/base-tdb-clients.git
   - https://github.com/TalkingDB/base-tdb-helpers.git
   - https://github.com/TalkingDB/package-content-elementizer.git
+  - https://github.com/TalkingDB/package-named-entity-linker.git
   - https://github.com/TalkingDB/module-ttt.git

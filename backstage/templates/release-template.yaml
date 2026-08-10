@@ -34,6 +34,11 @@ spec:
           type: string
           default: main
 
+        package_named_entity_linker_branch:
+          title: package-named-entity-linker Branch
+          type: string
+          default: main
+
         module_ttt_branch:
           title: module-ttt Branch
           type: string
@@ -50,6 +55,11 @@ spec:
         docker_content_elementizer:
           type: boolean
           title: Build package-content-elementizer
+          default: false
+
+        docker_named_entity_linker:
+          type: boolean
+          title: Build package-named-entity-linker
           default: false
 
       dependencies:
@@ -98,6 +108,30 @@ spec:
             - properties:
                 docker_content_elementizer:
                   const: false
+
+        docker_named_entity_linker:
+          oneOf:
+            - properties:
+                docker_named_entity_linker:
+                  const: true
+
+                named_entity_linker_tag_strategy:
+                  title: package-named-entity-linker Tag Strategy
+                  type: array
+                  uniqueItems: true
+                  items:
+                    type: string
+                    enum: [latest, commit, custom]
+                  default: [latest, commit, custom]
+
+                named_entity_linker_custom_tag:
+                  type: string
+                  title: package-named-entity-linker Custom Tag
+
+            - properties:
+                docker_named_entity_linker:
+                  const: false
+
     - title: Deployment Target
 
       properties:
@@ -197,6 +231,10 @@ spec:
                 "branch": "${{ parameters.package_content_elementizer_branch }}"
               },
               {
+                "url": "https://github.com/TalkingDB/package-named-entity-linker.git",
+                "branch": "${{ parameters.package_named_entity_linker_branch }}"
+              },
+              {
                 "url": "https://github.com/TalkingDB/module-ttt.git",
                 "branch": "${{ parameters.module_ttt_branch }}"
               }
@@ -205,6 +243,10 @@ spec:
           docker_content_elementizer: ${{ parameters.docker_content_elementizer | string }}
           content_elementizer_tag_strategy: ${{ parameters.content_elementizer_tag_strategy | string  }}
           content_elementizer_custom_tag: ${{ parameters.content_elementizer_custom_tag }}
+
+          docker_named_entity_linker: ${{ parameters.docker_named_entity_linker | string }}
+          named_entity_linker_tag_strategy: ${{ parameters.named_entity_linker_tag_strategy | string  }}
+          named_entity_linker_custom_tag: ${{ parameters.named_entity_linker_custom_tag }}
 
           docker_module_ttt: ${{ parameters.docker_module_ttt | string }}
           module_ttt_tag_strategy: ${{ parameters.module_ttt_tag_strategy | string  }}
@@ -224,6 +266,7 @@ spec:
           Release: ${{ parameters.release }}
 
           Build package-content-elementizer: ${{ parameters.docker_content_elementizer }}
+          Build package-named-entity-linker: ${{ parameters.docker_named_entity_linker }}
           Build module-ttt: ${{ parameters.docker_module_ttt }}
 
           Teams Notification: ${{ parameters.notify_teams }}

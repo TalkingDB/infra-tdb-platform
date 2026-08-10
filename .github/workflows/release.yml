@@ -47,6 +47,18 @@ on:
         type: string
         default: ""
 
+      docker_named_entity_linker:
+        type: string
+        default: "false"
+      
+      named_entity_linker_tag_strategy:
+        type: string
+        default: 'latest,commit,custom'
+
+      named_entity_linker_custom_tag:
+        type: string
+        default: ""
+
       notify_teams:
         type: string
         default: "true"
@@ -84,6 +96,10 @@ jobs:
       docker_content_elementizer: ${{ inputs.docker_content_elementizer }}
       content_elementizer_tag_strategy: ${{ inputs.content_elementizer_tag_strategy }}
       content_elementizer_custom_tag: ${{ inputs.content_elementizer_custom_tag }}
+
+      docker_named_entity_linker: ${{ inputs.docker_named_entity_linker }}
+      named_entity_linker_tag_strategy: ${{ inputs.named_entity_linker_tag_strategy }}
+      named_entity_linker_custom_tag: ${{ inputs.named_entity_linker_custom_tag }}
 
   deploy:
     needs: docker
