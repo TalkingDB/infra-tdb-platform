@@ -13,6 +13,7 @@ spec:
   - ./components/infra-tdb-platform.yaml
   - ./components/module-ttt.yaml
   - ./components/package-content-elementizer.yaml
+  - ./components/package-named-entity-linker.yaml
   - ./components/base-tdb-helpers.yaml
   - ./components/base-tdb-models.yaml
   - ./components/base-tdb-clients.yaml

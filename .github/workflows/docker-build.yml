@@ -31,6 +31,18 @@ on:
         required: false
         type: string
 
+      docker_named_entity_linker:
+        required: true
+        type: string
+
+      named_entity_linker_tag_strategy:
+        required: true
+        type: string
+
+      named_entity_linker_custom_tag:
+        required: false
+        type: string
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -61,4 +73,8 @@ jobs:
           DOCKER_CONTENT_ELEMENTIZER: ${{ inputs.docker_content_elementizer }}
           CONTENT_ELEMENTIZER_TAG_STRATEGY: ${{ inputs.content_elementizer_tag_strategy }}
           CONTENT_ELEMENTIZER_CUSTOM_TAG: ${{ inputs.content_elementizer_custom_tag }}
+        
+          DOCKER_NAMED_ENTITY_LINKER: ${{ inputs.docker_named_entity_linker }}
+          NAMED_ENTITY_LINKER_TAG_STRATEGY: ${{ inputs.named_entity_linker_tag_strategy }}
+          NAMED_ENTITY_LINKER_CUSTOM_TAG: ${{ inputs.named_entity_linker_custom_tag }}
         run: python actions/docker_build.py

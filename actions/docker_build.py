@@ -23,7 +23,13 @@ DOCKER_CONFIG = {
         "enabled": "DOCKER_CONTENT_ELEMENTIZER",
         "strategy": "CONTENT_ELEMENTIZER_TAG_STRATEGY",
         "custom": "CONTENT_ELEMENTIZER_CUSTOM_TAG",
-        "image": "talkingdb/content-elementizer",
+        "image": "talkingdb/ce",
+    },
+    "package-named-entity-linker": {
+        "enabled": "DOCKER_NAMED_ENTITY_LINKER",
+        "strategy": "NAMED_ENTITY_LINKER_TAG_STRATEGY",
+        "custom": "NAMED_ENTITY_LINKER_CUSTOM_TAG",
+        "image": "talkingdb/nel",
     },
 }
 
