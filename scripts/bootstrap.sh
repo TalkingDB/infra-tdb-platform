@@ -142,6 +142,7 @@ if [[ -d "$MODULE_DIR" ]]; then
     fi
   }
 
+
   if [[ -f "$SECRETS_MODE_FILE" ]]; then
     echo "✓ LLM provider already configured ($(cat "$SECRETS_MODE_FILE") / $(grep '^LLM_PROVIDER=' "$ENV_FILE" | cut -d= -f2)); skipping setup."
     echo "  Delete $SECRETS_MODE_FILE and rerun this script to reconfigure."
@@ -276,12 +277,14 @@ if [[ -d "$MODULE_DIR" ]]; then
         fi
       fi
 
+
       store_secret "LLM_PROVIDER" "$LLM_PROVIDER"
       echo "✔ Configured $LLM_PROVIDER as the LLM provider."
 
     else
       LLM_PROVIDER="ollama"
       store_secret "LLM_PROVIDER" "$LLM_PROVIDER"
+
 
       echo
       echo "▶ Setting up local model (Qwen 3 4B via Ollama) on this machine..."
@@ -310,8 +313,8 @@ if [[ -d "$MODULE_DIR" ]]; then
         ask "  Ollama base URL for the container to use [default: $OLLAMA_URL]: " "$OLLAMA_URL"
         OLLAMA_URL="$REPLY"
       fi
-      store_secret "OLLAMA_BASE_URL" "$OLLAMA_URL"
 
+      store_secret "OLLAMA_BASE_URL" "$OLLAMA_URL"
       echo "✔ Configured Ollama (qwen3:4b) as the LLM provider."
     fi
 
