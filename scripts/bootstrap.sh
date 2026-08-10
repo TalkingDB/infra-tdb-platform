@@ -20,11 +20,10 @@
 #   TDB_ROOT=/some/path           # workspace location
 #   TDB_AUTO_DEVPOD=Y|N           # whether to launch DevPod at the end
 #   TDB_INFRA_REPO=<git url>      # alternate infra repo source (e.g. a fork)
-#   TDB_SECRETS_MODE=infisical|dotenv
-#   TDB_LLM_PROVIDER=ollama|openai|grok
-#   TDB_OPENAI_API_KEY=...        # required if TDB_LLM_PROVIDER=openai
-#   TDB_GROK_API_KEY=...          # required if TDB_LLM_PROVIDER=grok
-#   TDB_OLLAMA_BASE_URL=...       # override for TDB_LLM_PROVIDER=ollama
+#   LLM_PROVIDER=ollama|openai|grok
+#   OPENAI_API_KEY=...        # required if LLM_PROVIDER=openai
+#   GROK_API_KEY=...          # required if LLM_PROVIDER=grok
+#   OLLAMA_BASE_URL=...       # override for LLM_PROVIDER=ollama
 #
 # Idempotent: re-running skips repos that already exist.
 
