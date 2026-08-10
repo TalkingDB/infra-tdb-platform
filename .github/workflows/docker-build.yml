@@ -76,5 +76,5 @@ jobs:
         
           DOCKER_NAMED_ENTITY_LINKER: ${{ inputs.docker_named_entity_linker }}
           NAMED_ENTITY_LINKER_TAG_STRATEGY: ${{ inputs.named_entity_linker_tag_strategy }}
-          NAMED_ENTITY_LINKER_CUSTOM_TAG: ${{ inputs.named_entity_linker_custom_tag
+          NAMED_ENTITY_LINKER_CUSTOM_TAG: ${{ inputs.named_entity_linker_custom_tag }}
         run: python actions/docker_build.py
