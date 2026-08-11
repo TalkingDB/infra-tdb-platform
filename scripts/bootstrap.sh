@@ -190,13 +190,6 @@ if [[ -d "$MODULE_DIR" ]]; then
 
         if command -v infisical >/dev/null 2>&1; then
           echo "  Please log in to Infisical (follow any browser/URL prompt below):"
-          # Was: `infisical login <"$TTY" >&2 2>/dev/null || infisical login`.
-          # That redirected infisical's own stderr to /dev/null on the first
-          # attempt - which is exactly where device-flow/browser login URLs
-          # get printed - so the user never saw what to do, and the fallback
-          # attempt had no TTY at all under `curl | bash`. Net effect: login
-          # essentially could never succeed. Fixed to one attempt with stdin
-          # from the real terminal and nothing suppressed.
           if infisical login <"$TTY"; then
             SECRETS_MODE="infisical"
             echo "  ✓ Logged in to Infisical"
@@ -213,14 +206,6 @@ if [[ -d "$MODULE_DIR" ]]; then
     store_secret() {
       local name="$1" value="$2"
       if [[ "$SECRETS_MODE" == "infisical" ]]; then
-        # Must run from $MODULE_DIR: that's where .infisical.json links this
-        # workspace to its Infisical project. Running from $ROOT (the old
-        # behavior - this function was never `cd`'d into $MODULE_DIR) means
-        # there's no linked project in scope, so every call failed here,
-        # silently, every time - `--env=dev` is likewise required, not
-        # optional. Errors are shown now instead of swallowed entirely, so a
-        # wrong environment slug or other Infisical-side issue is visible
-        # instead of just quietly landing in .env with no explanation.
         if ! (cd "$MODULE_DIR" && infisical secrets set "$name=$value" --env=dev); then
           echo "  ⚠ Failed to store $name in Infisical, writing to .env instead."
           set_var "$name" "$value"
