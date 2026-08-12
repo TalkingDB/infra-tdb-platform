@@ -50,9 +50,16 @@ make sync
 echo "▶ Installing LibreOffice"
 
 if ! command -v soffice >/dev/null 2>&1; then
+  sudo rm -f /etc/apt/sources.list.d/yarn.list
   sudo apt-get update -qq
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
     libreoffice-writer >/dev/null
+fi
+
+if ! command -v infisical >/dev/null 2>&1; then
+  curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+  sudo apt-get update -qq
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq infisical >/dev/null
 fi
 
 echo "✔ LibreOffice installed"
