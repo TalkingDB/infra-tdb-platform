@@ -1,11 +1,18 @@
 services:
   module-ttt:
-    image: talkingdb/ttt
+    image: ${TTT_IMAGE:-talkingdb/ttt}
     pull_policy: always
     restart: unless-stopped
     volumes:
       - ./data:/app/data
       - tdb-spool:/var/tmp/tdb-spool
+    environment:
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:?MINIO_ENDPOINT is required}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY is required}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:?MINIO_SECRET_KEY is required}
+      - MINIO_BUCKET=${MINIO_BUCKET:?MINIO_BUCKET is required}
+
     labels:
       - traefik.enable=true
       - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${TTT_BACKEND_HOST}`)
