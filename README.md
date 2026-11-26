@@ -6,6 +6,11 @@ Local setup, multi repository orchestration and deployment for the TalkingDB eco
 ![Shell: Bash](https://img.shields.io/badge/shell-bash-4EAA25)
 ![Deploy: Ansible](https://img.shields.io/badge/deploy-ansible-EE0000)
 
+<p align="center">
+  <img src="docs/images/demo.gif" alt="A short animated tour of infra-tdb-platform: what it is, how to start, and which page to read next">
+</p>
+<p align="center"><sub>A short tour: what it is, how to start, and what to read next.</sub></p>
+
 | Start here | Go deeper |
 | :--- | :--- |
 | [What is in here](#what-is-in-here) | [Architecture: local runs, releases, deployment](docs/architecture.md) |
@@ -86,6 +91,12 @@ Default ports once running: module-ttt 8090, content elementizer 8091, NEL 8092,
 ## Code contributor
 
 mayank.g@smarter.codes
+
+## Support TalkingDB
+
+If infra-tdb-platform saved you time, please [give it a star](https://github.com/TalkingDB/infra-tdb-platform) ⭐. Stars help other developers find the project.
+
+Found a bug, or a document it gets wrong? [Open an issue](https://github.com/TalkingDB/infra-tdb-platform/issues/new). We are always here to help and open to a conversation. Explore the TalkingDB applications at [talkingdb.io](https://talkingdb.io/#applications).
 
 ## License
 
