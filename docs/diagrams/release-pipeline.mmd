@@ -1,0 +1,7 @@
+flowchart LR
+    accTitle: Release pipeline
+    accDescr: The release workflow is started manually. It syncs repositories, builds Docker images, deploys, and sends notifications, each as a reusable workflow backed by a Python script in actions.
+    R["release.yml<br>(manual)"] --> S["sync-repositories.yml<br>actions/sync_repositories.py"]
+    S --> B["docker-build.yml<br>actions/docker_build.py"]
+    B --> D["deploy.yml<br>actions/deploy.py"]
+    D --> N["notifications.yml<br>actions/notify.py"]

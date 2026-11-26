@@ -1,0 +1,15 @@
+flowchart LR
+    accTitle: Where infra-tdb-platform fits
+    accDescr: infra-tdb-platform sits next to the other repositories in one workspace folder. Make targets clone them, sync their pins, and start each package and module locally. The release workflow builds images and Ansible deploys them behind Traefik.
+    subgraph WS["one workspace folder"]
+        INFRA["infra-tdb-platform"]:::here
+        BASE["base-tdb-*"]
+        PKG["package-*"]
+        MOD["module-*"]
+    end
+    INFRA -- "make clone" --> BASE
+    INFRA -- "make sync" --> PKG
+    INFRA -- "make local" --> MOD
+    INFRA -- "release workflow" --> IMG["Docker images"]
+    IMG -- "Ansible" --> SRV["Server<br>Traefik + services"]
+    classDef here stroke-width:3px

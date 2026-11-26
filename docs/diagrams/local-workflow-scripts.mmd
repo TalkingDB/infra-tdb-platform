@@ -1,0 +1,11 @@
+flowchart TB
+    accTitle: Local workflow scripts
+    accDescr: make clone reads local/repo.yaml and clones each repository into the parent folder. make sync runs sync_git.sh, which pulls each repository fast forward only, runs make sync in it, then poetry lock and install in local mode or poetry update in git mode. make local runs deploy.sh local, which starts make local in every package and module in the background. make push runs push_git.sh, which syncs, commits everything and pushes each repository.
+    CL["make clone<br>scripts/clone-repo.sh"] --> RY["read local/repo.yaml"] --> GC["git clone into ../"]
+    SY["make sync mode=git|local<br>scripts/sync_git.sh"] --> PULL["git pull --ff-only<br>in each repo"]
+    PULL --> MS["make sync MODE=..."]
+    MS --> PO{"mode"}
+    PO -- local --> PL["poetry lock + install"]
+    PO -- git --> PU["poetry update"]
+    LO["make local<br>scripts/deploy.sh local"] --> BG["make local in every<br>../package-* and ../module-*<br>(background, prefixed logs)"]
+    PS["make push<br>scripts/push_git.sh"] --> ADD["make sync, git add ., commit,<br>push, in every repo"]
