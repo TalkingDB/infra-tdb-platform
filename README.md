@@ -7,9 +7,9 @@ Local setup, multi repository orchestration and deployment for the TalkingDB eco
 ![Deploy: Ansible](https://img.shields.io/badge/deploy-ansible-EE0000)
 
 <p align="center">
-  <img src="docs/images/demo.gif" alt="A short animated tour of infra-tdb-platform: what it is, how to start, and which page to read next">
+  <img src="docs/images/demo.gif" alt="Animated demo: the real output of make help and make doctor, the six repositories listed in local/repo.yaml, then the four release workflows and the script behind each">
 </p>
-<p align="center"><sub>A short tour: what it is, how to start, and what to read next.</sub></p>
+<p align="center"><sub><code>make help</code> and <code>make doctor</code> are a real run at <code>398b8f2</code>; the workflows are read from the repo.</sub></p>
 
 | Start here | Go deeper |
 | :--- | :--- |
