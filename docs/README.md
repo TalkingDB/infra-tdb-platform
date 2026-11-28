@@ -8,3 +8,4 @@ Everything beyond the [README](../README.md), in one place.
 | [Troubleshooting](troubleshooting.md) | Fixing | Symptoms, their causes and the fixes |
 | [Usage and examples](usage-and-examples.md) | How to | Copy and paste examples, with the real output where it was run |
 | [Diagram sources](diagrams/README.md) | Maintaining | How to edit and re-render the diagrams on these pages |
+| [Full reference](reference.md) | Reference | Everything that used to be on the front page |
